@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>プロドライバー向け 運転性格診断テスト</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #16a085;
+            --bg-color: #f5f6fa;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 1.8rem;
+        }
+
+        .quiz-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: none; /* JSで制御 */
+        }
+
+        .quiz-card.active {
+            display: block;
+        }
+
+        .category-badge {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .question-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .options-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .option-item {
+            margin-bottom: 12px;
+        }
+
+        .option-btn {
+            width: 100%;
+            text-align: left;
+            padding: 14px 20px;
+            background-color: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .option-btn:hover {
+            background-color: #e2e6ea;
+            border-color: #ced4da;
+        }
+
+        /* 結果表示エリア */
+        #result-area {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+            display: none;
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: 20px 0;
+        }
+
+        .result-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .result-desc {
+            line-height: 1.6;
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🚛 運転性格診断テスト (ドラフト版)</h1>
+        <p>本音で答える、現場のための安全運転プロファイリング</p>
+    </header>
+
+    <div id="quiz-container"></div>
+
+    <div id="result-area">
+        <h2>診断結果</h2>
+        <div class="score-display"><span id="total-score">0</span>点</div>
+        <div class="result-title" id="result-status">判定中...</div>
+        <div class="result-desc" id="result-commentary"></div>
+    </div>
+</div>
+
+<script>
+    // 問題データ（傾斜配点のアルゴリズムを仕込んだオブジェクト配列）
+    const quizData = [
+        {
+            category: "交差点・信号判断",
+            question: "交差点50m手前で信号が黄色に変わった。あなたはどうする?",
+            options: [
+                { text: "完全にブレーキが間に合う距離なので、迷わず安全に停止する", score: 2 },
+                { text: "急ブレーキによる荷崩れや後続車へのリスクを考慮し、そのままの速度で通過する", score: 1 },
+                { text: "信号の変わり際なら行けると判断し、少し加速して通過する", score: -1 },
+                { text: "後続車が詰まっている時だけ、巻き込まれないように加速して抜ける", score: -2 }
+            ]
+        },
+        {
+            category: "車間距離",
+            question: "前車が大型トラックで死角が多い。車間距離は?",
+            options: [
+                { text: "前車のさらに先の状況が見えないため、普段より広めに取る", score: 2 },
+                { text: "普段通りの車間を維持し、前の車の動きに完全に同調する", score: 1 },
+                { text: "前車の影に入って風圧を避ける、または車間を詰めて視界を確保しようとする", score: -2 },
+                { text: "前車が遅いと感じたら、すぐに車線変更できるように車間を詰めてプレッシャーをかける", score: -3 }
+            ]
+        },
+        {
+            category: "心理面（苛立ち・プレッシャー）",
+            question: "荷待ちが長引き、次の予定が押している時の心理は?",
+            options: [
+                { text: "焦っても到着時間は数分しか変わらないと割り切り、意識的に普段より丁寧に運転する", score: 2 },
+                { text: "焦る気持ちはあるが、速度は上げずにウインカーの出すタイミングなどを早めて対応する", score: 0 },
+                { text: "知らず知らずのうちにアクセルが強くなり、車間距離が詰まってしまう", score: -1 },
+                { text: "イライラが運転に出てしまい、前の遅い車に対して心の中で毒づきながら走る", score: -2 }
+            ]
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let userScore = 0;
+    // 今回の最高得点（全て2点の場合）
+    const maxScore = quizData.length * 2;
+
+    const quizContainer = document.getElementById('quiz-container');
+    const resultArea = document.getElementById('result-area');
+
+    // クイズの初期レンダリング
+    function initQuiz() {
+        quizData.forEach((data, index) => {
+            const card = document.createElement('div');
+            card.className = `quiz-card ${index === 0 ? 'active' : ''}`;
+            card.id = `question-${index}`;
+
+            card.innerHTML = `
+                <div class="category-badge">${data.category} (問 ${index + 1}/${quizData.length})</div>
+                <div class="question-text">${data.question}</div>
+                <ul class="options-list">
+                    ${data.options.map((option, i) => `
+                        <li class="option-item">
+                            <button class="option-btn" onclick="handleAnswer(${index}, ${option.score})">
+                                ${i + 1}) ${option.text}
+                            </button>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+            quizContainer.appendChild(card);
+        });
+    }
+
+    // 回答が選択された時の処理
+    window.handleAnswer = function(questionIndex, score) {
+        userScore += score;
+
+        // 現在のカードを非表示に
+        document.getElementById(`question-${questionIndex}`).classList.remove('active');
+
+        currentQuestionIndex++;
+
+        if (currentQuestionIndex < quizData.length) {
+            // 次のカードを表示
+            document.getElementById(`question-${currentQuestionIndex}`).classList.add('active');
+        } else {
+            // 全問終了、結果表示
+            showResult();
+        }
+    };
+
+    // 結果のロジック判定
+    function showResult() {
+        quizContainer.style.display = 'none';
+        resultArea.style.display = 'block';
+
+        document.getElementById('total-score').innerText = userScore;
+
+        const statusEl = document.getElementById('result-status');
+        const commentaryEl = document.getElementById('result-commentary');
+
+        // 得点率に応じたロジック（暫定）
+        if (userScore >= maxScore * 0.8) {
+            statusEl.innerText = "🏆 プロフェッショナル・セーフティ";
+            commentaryEl.innerHTML = "<strong>特徴:</strong> 先読み能力、感情コントロールともに極めて優秀です。現場の状況をデータとロジックで冷静に割り切ることができ、時間的なプレッシャーにも動じない強さを持っています。周囲の手本となるドライバーです。";
+        } else if (userScore >= maxScore * 0.5) {
+            statusEl.innerText = "👍 堅実型（状況流され注意）";
+            commentaryEl.innerHTML = "<strong>特徴:</strong> 基本的な安全意識は高いですが、渋滞や時間の遅れなど、外部環境のストレスによってわずかに判断のブレが生じる可能性があります。「急いでも結果は変わらない」という事実ベースの割り切りをさらに意識しましょう。";
+        } else {
+            statusEl.innerText = "⚠️ イエローカード（自己基準・ハイリスク型）";
+            commentaryEl.innerHTML = "<strong>特徴:</strong> 「これくらいなら大丈夫」という主観的なベテラン過信や、焦りがダイレクトに運転行動に出てしまうリスクがあります。ルールを自己判断で省略せず、基本に立ち返る必要があります。";
+        }
+    }
+
+    // 始動
+    initQuiz();
+</script>
+</body>
+</html>
