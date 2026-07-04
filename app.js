@@ -9,6 +9,9 @@ const resultCommentaryDiv = document.getElementById('result-commentary');
 const breakdownContainer = document.getElementById('breakdown-container');
 
 function initQuiz() {
+    // 既存のカードをクリア（リセット時に重複生成されるのを防ぐ）
+    quizContainer.innerHTML = '';
+    
     quizData.forEach((qData, index) => {
         const card = document.createElement('div');
         card.className = `quiz-card ${index === 0 ? 'active' : ''}`;
@@ -58,7 +61,6 @@ function showResult() {
     let status = "";
     let commentary = "";
 
-    // 厳格な判定ロジック
     if (totalScore >= 95) {
         status = "判定：プロフェッショナル（95〜100点）";
         commentary = "すべての運行シチュエーションにおいて、突発的なリスクや自身の体調変化に対する予測・管理が客観的かつ論理的に行えています。現場の状況に左右されず、常に一貫した防衛運転を選択できる状態です。";
@@ -79,7 +81,6 @@ function showResult() {
     resultStatusDiv.innerText = status;
     resultCommentaryDiv.innerText = commentary;
 
-    // スコアバッジ用マッピング
     const scoreClassMap = {
         '2': 'score-p2',
         '1': 'score-p1',
@@ -101,6 +102,22 @@ function showResult() {
         `;
     }).join('');
 }
+
+// 【追加】クイズを最初からやり直すリセット関数
+window.resetQuiz = function() {
+    currentQuestionIndex = 0;
+    userAnswers = [];
+    
+    // 画面表示の切り替え
+    resultArea.style.display = 'none';
+    quizContainer.style.display = 'block';
+    
+    // クイズ画面の再生成と最初の質問のアクティブ化
+    initQuiz();
+    
+    // ページ最上部へスムーズにスクロール
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 // 初期化実行
 initQuiz();

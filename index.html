@@ -17,6 +17,10 @@
     <div id="quiz-container"></div>
 
     <div id="result-area">
+        <div style="text-align: right; margin-bottom: 15px;">
+            <button class="option-btn" style="width: auto; display: inline-block; padding: 10px 20px;" onclick="resetQuiz()">🔄 テストをやり直す</button>
+        </div>
+
         <div class="result-header">
             <h2>診断結果</h2>
             <div class="score-display"><span id="total-score">0</span>点</div>
@@ -26,6 +30,10 @@
 
         <div class="breakdown-title">📊 回答内訳</div>
         <div id="breakdown-container"></div>
+
+        <div style="text-align: center; margin-top: 25px;">
+            <button class="option-btn" style="width: 100%; max-width: 300px; text-align: center; background-color: var(--primary-color); color: white;" onclick="resetQuiz()">🔄 もう一度テストを受ける</button>
+        </div>
     </div>
 </div>
 
