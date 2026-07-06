@@ -94,10 +94,7 @@ function initTest() {
 
         const progress = (index / shuffledQuestions.length) * 100;
 
-        // シャッフル後の選択肢を質問データ自体に保持しておく
-        // → onclick属性にテキストを埋め込まずに済むので、クオート/エスケープ事故が構造的に発生しなくなる
-        qData.shuffledOptions = shuffleArray(qData.options);
-
+        // shuffledOptionsはstartTest内で既に付与済み（testDataを汚染しないための設計）
         card.innerHTML = `
             <div class="progress-container"><div class="progress-bar" style="width: ${progress}%"></div></div>
             <div style="font-size:0.8rem; color:#636e72;">質問 ${index + 1} / ${shuffledQuestions.length}</div>
@@ -157,7 +154,12 @@ function renderPastScores() {
 
 window.startTest = function() {
     userAnswers = [];
-    shuffledQuestions = shuffleArray(testData);
+    // testDataの質問オブジェクトを直接書き換えないよう、新しいオブジェクトとしてコピーしてから
+    // shuffledOptionsを持たせる（マスターデータの不変性を守るための修正）
+    shuffledQuestions = shuffleArray(testData).map(qData => ({
+        ...qData,
+        shuffledOptions: shuffleArray(qData.options)
+    }));
     initTest();
     showScreen(SCREENS.TEST);
 };
