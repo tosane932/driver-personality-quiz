@@ -12,6 +12,24 @@ function shuffleArray(array) {
     return arr;
 }
 
+function createRipple(event) {
+    const button = event.currentTarget;
+    const circle = document.createElement('span');
+    const diameter = Math.max(button.clientWidth, button.clientHeight);
+    const radius = diameter / 2;
+    const rect = button.getBoundingClientRect();
+
+    circle.style.width = circle.style.height = `${diameter}px`;
+    circle.style.left = `${event.clientX - rect.left - radius}px`;
+    circle.style.top = `${event.clientY - rect.top - radius}px`;
+    circle.classList.add('ripple');
+
+    const existing = button.getElementsByClassName('ripple')[0];
+    if (existing) existing.remove();
+
+    button.appendChild(circle);
+}
+
 function initTest() {
     testContainer.innerHTML = '';
     shuffledQuestions.forEach((qData, index) => {
@@ -28,9 +46,9 @@ function initTest() {
             <div class="question-text">${qData.question}</div>
             <ul style="list-style:none; padding:0;">
                 ${shuffledOptions.map((opt, oIdx) => `
-                    <li><button class="option-btn" onclick="handleAnswer(${index}, ${oIdx}, '${opt.text.replace(/'/g, "\\'")}', ${opt.score})">${opt.text}</button></li>
+                    <li><button class="option-btn" onclick="createRipple(event); handleAnswer(${index}, ${oIdx}, '${opt.text.replace(/'/g, "\\'")}', ${opt.score})">${opt.text}</button></li>
                 `).join('')}
-                <li><button class="option-btn skip-btn" onclick="handleAnswer(${index}, -1, '回答なし', 0)">状況が判断できない／該当なし</button></li>
+                <li><button class="option-btn skip-btn" onclick="createRipple(event); handleAnswer(${index}, -1, '回答なし', 0)">状況が判断できない／該当なし</button></li>
             </ul>
         `;
         testContainer.appendChild(card);
